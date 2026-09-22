@@ -8,10 +8,12 @@ Test cases can be run with the following:
 import os
 import logging
 from unittest import TestCase
+from unittest.mock import patch
 from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
+from werkzeug.exceptions import InternalServerError
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
@@ -174,3 +176,17 @@ class TestAccountService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(len(data), 5)
+
+    def test_method_not_allowed(self):
+        """It should not allow an illegal method call"""
+        resp = self.client.patch(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_500_internal_server_error(self):
+        """It should handle 500 Internal Server Error"""
+        with patch("service.routes.Account.all", side_effect=InternalServerError("Database connection error")):
+            response = self.client.get(BASE_URL)
+
+            self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            data = response.get_json()
+            self.assertEqual(data["error"], "Internal Server Error")
