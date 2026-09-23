@@ -4,7 +4,8 @@ about: This template is for create a user story
 title: ''
 labels: ''
 assignees: ''
-
+projects:
+  - kleyner098/devops-capstone-project
 ---
 
 **As a** [role]  
